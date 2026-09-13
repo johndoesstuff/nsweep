@@ -1,0 +1,7 @@
+<script>
+	WebAssembly.instantiateStreaming(fetch("zig-out/bin/nsweep.wasm"), {}).then(
+		(result) => {
+			console.log(result.instance.exports.add(4, 2));
+		},
+	);
+</script>
