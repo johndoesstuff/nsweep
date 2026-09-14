@@ -24,7 +24,7 @@ let zig_environment = {
 	canvas_line_to: function(c, x, y) { ctxs[c].lineTo(x, y) },
 	canvas_move_to: function(c, x, y) { ctxs[c].moveTo(x, y) },
 	canvas_fill: function(c) { ctxs[c].fill() },
-	canvas_set_fill: function(c, r, g, b) { ctxs[c].fillStyle = `rgb(${r}, ${g}, ${b})`; console.log(ctxs[c].fillStyle) },
+	canvas_set_fill: function(c, r, g, b) { ctxs[c].fillStyle = `rgb(${r}, ${g}, ${b})` },
 }
 
 function resize() {

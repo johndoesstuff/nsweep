@@ -15,6 +15,14 @@ export fn test_canvas() void {
     points.append(allocator, .{ .x = 200, .y = 100 }) catch unreachable;
     points.append(allocator, .{ .x = 150, .y = 150 }) catch unreachable;
 
-    renderer.render_cell(points);
+    const cell: renderer.Cell = .{
+        .mines = 0,
+        .number = allocator.dupeZ(u8, "5") catch unreachable,
+        .number_color = .{ .r = 100, .g = 100, .b = 100 },
+        .shape = points,
+        .neighbors = .empty,
+        .linked = .empty,
+    };
+    renderer.render_cell(cell);
     renderer.render();
 }
