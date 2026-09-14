@@ -18,10 +18,12 @@ let zig_environment = {
 	get_height: function() { return canvas.height },
 	render: function() {
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.drawImage(background_ctx, 0, 0);
-		ctx.drawImage(base_ctx, 0, 0);
-		ctx.drawImage(upper_ctx, 0, 0);
-	}
+		canvases.forEach(e => ctx.drawImage(e, 0, 0));
+	},
+	canvas_begin_path: function(c) { ctxs[c].beginPath() },
+	canvas_line_to: function(x, y, c) { ctxs[c].lineTo(x, y) },
+	canvas_move_to: function(x, y, c) { ctxs[c].moveTo(x, y) },
+	canvas_fill: function(c) { ctxs[c].fill() },
 }
 
 function resize() {
@@ -29,7 +31,7 @@ function resize() {
 	canvas.height = window.innerHeight;
 	canvases.forEach(e => {
 		e.width = window.innerWidth;
-		e.height = window.innerHieght;
+		e.height = window.innerHeight;
 	})
 }
 resize();
