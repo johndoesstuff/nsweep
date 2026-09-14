@@ -1,7 +1,31 @@
-<script>
-	WebAssembly.instantiateStreaming(fetch("zig-out/bin/nsweep.wasm"), {}).then(
-		(result) => {
-			console.log(result.instance.exports.add(4, 2));
-		},
-	);
-</script>
+<html>
+	<head>
+		<title>NSweep</title>
+		<style>
+			body {
+				margin: 0;
+				overflow: hidden;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="c"></canvas>
+		<script>
+			function resize() {
+				let canvas = document.getElementById("c");
+				canvas.width = window.innerWidth;
+				canvas.height = window.innerHeight;
+			}
+			resize();
+			window.onresize = resize;
+		</script>
+		<script src="environment.js"></script>
+		<script>
+			WebAssembly.instantiateStreaming(fetch("zig-out/bin/nsweep.wasm"), {env: zig_environment}).then(
+				(result) => {
+					console.log(result.instance.exports.add_size());
+				},
+			);
+		</script>
+	</body>
+</html>
