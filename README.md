@@ -1,3 +1,7 @@
+This is a project to learn zig and have an excuse to play more minesweeper
+
+Here are my ideas:
+
 Minesweeper variations:
 
 Unlimited geometries defined through recursion
