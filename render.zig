@@ -1,4 +1,5 @@
 const std = @import("std");
+const nsweep = @import("nsweep.zig");
 
 pub extern fn get_width() i32;
 pub extern fn get_height() i32;
@@ -43,53 +44,38 @@ const background_canvas = Canvas.init(0);
 const base_canvas = Canvas.init(1);
 const upper_canvas = Canvas.init(2);
 
-pub const Ruleset = struct {
-    negative_mines: u1, // mines of negative value are possible
-    multiple_mines: u1, // >1 mines per square are possible
-    meta_numbering: u1, // number = sum of surrounding numbers
-    upper_bounds: u1, // numbers like <n are possible
-    lower_bounds: u1, // numbers like >n are possible
-    not_bounds: u1, // numbers like !n are possible
-    connected_cells: u1, // randomly linked cells
-};
-
-pub const Board = struct {
-    cells: std.ArrayList(Cell),
-    rules: Ruleset,
-};
-
-pub const Cell = struct {
-    mines: i32, // signed for negative mines or multiple mines
-    number: []const u8, // string that prints for each cell
-    number_color: Color,
-    shape: std.ArrayList(Point),
-    neighbors: std.ArrayList(*Cell), // used to calculate number
-    linked: std.ArrayList(*Cell), // used for variants of interdependent cells
-};
-
-pub const Point = struct {
+const Coordinates = struct {
     x: i32,
     y: i32,
 };
 
-pub const Color = struct {
-    r: u8,
-    g: u8,
-    b: u8,
+pub const View = struct {
+    x: f32,
+    y: f32,
+    zoom: f32,
+
+    pub fn point_to_coordinates(self: View, point: nsweep.Point) Coordinates {
+        return .{
+            .x = @as(i32, @intFromFloat(self.zoom * point.x + self.x)),
+            .y = @as(i32, @intFromFloat(self.zoom * point.y + self.y)),
+        };
+    }
+
+    pub fn render_cell(self: View, cell: nsweep.Cell) void {
+        const points = cell.shape;
+        const last = points.items[points.items.len - 1];
+        const last_c = self.point_to_coordinates(last);
+        base_canvas.move_to(last_c.x, last_c.y);
+        base_canvas.begin_path();
+        for (points.items) |item| {
+            const coordinates: Coordinates = self.point_to_coordinates(item);
+            base_canvas.line_to(coordinates.x, coordinates.y);
+        }
+        base_canvas.set_fill(227, 216, 167);
+        base_canvas.fill();
+    }
 };
 
 // my thought process for optimizing board rendering is to have a canvas for
 // the base board and a canvas for hiding the board states, revealing cells can
 // erase from the top canvas (or canvases depending on stroke details)
-
-pub fn render_cell(cell: Cell) void {
-    const points = cell.shape;
-    const last = points.items[points.items.len - 1];
-    base_canvas.move_to(last.x, last.y);
-    base_canvas.begin_path();
-    for (points.items) |item| {
-        base_canvas.line_to(item.x, item.y);
-    }
-    base_canvas.set_fill(227, 216, 167);
-    base_canvas.fill();
-}
