@@ -21,9 +21,10 @@ let zig_environment = {
 		canvases.forEach(e => ctx.drawImage(e, 0, 0));
 	},
 	canvas_begin_path: function(c) { ctxs[c].beginPath() },
-	canvas_line_to: function(x, y, c) { ctxs[c].lineTo(x, y) },
-	canvas_move_to: function(x, y, c) { ctxs[c].moveTo(x, y) },
+	canvas_line_to: function(c, x, y) { ctxs[c].lineTo(x, y) },
+	canvas_move_to: function(c, x, y) { ctxs[c].moveTo(x, y) },
 	canvas_fill: function(c) { ctxs[c].fill() },
+	canvas_set_fill: function(c, r, g, b) { ctxs[c].fillStyle = `rgb(${r}, ${g}, ${b})`; console.log(ctxs[c].fillStyle) },
 }
 
 function resize() {

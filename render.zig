@@ -4,9 +4,11 @@ pub extern fn get_width() i32;
 pub extern fn get_height() i32;
 
 pub extern fn canvas_begin_path(id: u32) void;
-pub extern fn canvas_line_to(x: i32, y: i32, id: u32) void;
-pub extern fn canvas_move_to(x: i32, y: i32, id: u32) void;
+pub extern fn canvas_line_to(id: u32, x: i32, y: i32) void;
+pub extern fn canvas_move_to(id: u32, x: i32, y: i32) void;
 pub extern fn canvas_fill(id: u32) void;
+pub extern fn canvas_set_fill(id: u32, r: u8, g: u8, b: u8) void;
+
 pub extern fn render() void;
 
 pub const Canvas = struct {
@@ -21,15 +23,19 @@ pub const Canvas = struct {
     }
 
     pub fn line_to(self: Canvas, x: i32, y: i32) void {
-        canvas_line_to(x, y, self.id);
+        canvas_line_to(self.id, x, y);
     }
 
     pub fn move_to(self: Canvas, x: i32, y: i32) void {
-        canvas_move_to(x, y, self.id);
+        canvas_move_to(self.id, x, y);
     }
 
     pub fn fill(self: Canvas) void {
         canvas_fill(self.id);
+    }
+
+    pub fn set_fill(self: Canvas, r: u8, g: u8, b: u8) void {
+        canvas_set_fill(self.id, r, g, b);
     }
 };
 
@@ -53,5 +59,6 @@ pub fn render_cell(points: std.ArrayList(Point)) void {
     for (points.items) |item| {
         base_canvas.line_to(item.x, item.y);
     }
+    base_canvas.set_fill(227, 216, 167);
     base_canvas.fill();
 }
