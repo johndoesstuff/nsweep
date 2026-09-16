@@ -1,5 +1,6 @@
 let background_canvas = document.createElement("canvas");
 let base_canvas = document.createElement("canvas");
+let mid_canvas = document.createElement("canvas");
 let upper_canvas = document.createElement("canvas");
 
 let canvas = document.getElementById("c");
@@ -8,6 +9,7 @@ let ctx = canvas.getContext("2d");
 let canvases = [
 	background_canvas,
 	base_canvas,
+	mid_canvas,
 	upper_canvas,
 ];
 

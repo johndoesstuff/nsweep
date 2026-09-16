@@ -35,14 +35,18 @@ pub const Canvas = struct {
         canvas_fill(self.id);
     }
 
-    pub fn set_fill(self: Canvas, r: u8, g: u8, b: u8) void {
-        canvas_set_fill(self.id, r, g, b);
+    pub fn set_fill(self: Canvas, color: nsweep.Color) void {
+        canvas_set_fill(self.id, color.r, color.g, color.b);
     }
 };
 
+// my thought process for optimizing board rendering is to have a canvas for
+// the base board and a canvas for hiding the board states, revealing cells can
+// erase from the top canvas (or canvases depending on stroke details)
 const background_canvas = Canvas.init(0);
 const base_canvas = Canvas.init(1);
-const upper_canvas = Canvas.init(2);
+const mid_canvas = Canvas.init(2);
+const upper_canvas = Canvas.init(3);
 
 const Coordinates = struct {
     x: i32,
@@ -71,11 +75,18 @@ pub const View = struct {
             const coordinates: Coordinates = self.point_to_coordinates(item);
             base_canvas.line_to(coordinates.x, coordinates.y);
         }
-        base_canvas.set_fill(227, 216, 167);
+        base_canvas.set_fill(.{ .r = 227, .g = 216, .b = 167 });
         base_canvas.fill();
+        mid_canvas.set_fill(cell.number_color);
     }
 };
 
-// my thought process for optimizing board rendering is to have a canvas for
-// the base board and a canvas for hiding the board states, revealing cells can
-// erase from the top canvas (or canvases depending on stroke details)
+fn get_cell_center(cell: nsweep.Cell) nsweep.Point {
+    // simple weighted average of verts for now
+    const points = cell.shape;
+    var center: nsweep.Point = points.items[0];
+    for (points.items) |point| {
+        center = center.add(point);
+    }
+    return center.mul(1.0 / @as(f32, @floatFromInt(points.items.len)));
+}

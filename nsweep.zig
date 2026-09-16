@@ -2,13 +2,13 @@ const renderer = @import("render.zig");
 const std = @import("std");
 
 pub const Ruleset = struct {
-    negative_mines: u1, // mines of negative value are possible
-    multiple_mines: u1, // >1 mines per square are possible
-    meta_numbering: u1, // number = sum of surrounding numbers
-    upper_bounds: u1, // numbers like <n are possible
-    lower_bounds: u1, // numbers like >n are possible
-    not_bounds: u1, // numbers like !n are possible
-    connected_cells: u1, // randomly linked cells
+    negative_mines: bool, // mines of negative value are possible
+    multiple_mines: bool, // >1 mines per square are possible
+    meta_numbering: bool, // number = sum of surrounding numbers
+    upper_bounds: bool, // numbers like <n are possible
+    lower_bounds: bool, // numbers like >n are possible
+    not_bounds: bool, // numbers like !n are possible
+    connected_cells: bool, // randomly linked cells
 };
 
 pub const Board = struct {
@@ -18,6 +18,7 @@ pub const Board = struct {
 
 pub const Cell = struct {
     mines: i32, // signed for negative mines or multiple mines
+    revealed: bool,
     number: []const u8, // string that prints for each cell
     number_color: Color,
     shape: std.ArrayList(Point),
@@ -28,6 +29,18 @@ pub const Cell = struct {
 pub const Point = struct {
     x: f32,
     y: f32,
+    pub fn add(self: Point, b: Point) Point {
+        return .{
+            .x = self.x + b.x,
+            .y = self.y + b.y,
+        };
+    }
+    pub fn mul(self: Point, c: f32) Point {
+        return .{
+            .x = self.x * c,
+            .y = self.y * c,
+        };
+    }
 };
 
 pub const Color = struct {
@@ -53,6 +66,7 @@ export fn test_canvas() void {
         .shape = points,
         .neighbors = .empty,
         .linked = .empty,
+        .revealed = false,
     };
 
     var view: renderer.View = .{
