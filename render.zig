@@ -92,7 +92,7 @@ pub const View = struct {
 fn get_cell_center(cell: nsweep.Cell) nsweep.Point {
     // simple weighted average of verts for now
     const points = cell.shape;
-    var center: nsweep.Point = points.items[0];
+    var center: nsweep.Point = .{ .x = 0.0, .y = 0.0 };
     for (points.items) |point| {
         center = center.add(point);
     }
