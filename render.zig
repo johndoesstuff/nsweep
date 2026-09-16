@@ -9,6 +9,7 @@ pub extern fn canvas_line_to(id: u32, x: i32, y: i32) void;
 pub extern fn canvas_move_to(id: u32, x: i32, y: i32) void;
 pub extern fn canvas_fill(id: u32) void;
 pub extern fn canvas_set_fill(id: u32, r: u8, g: u8, b: u8) void;
+pub extern fn canvas_fill_text(id: u32, ptr: [*]const u8, len: usize, x: i32, y: i32) void;
 
 pub extern fn render() void;
 
@@ -37,6 +38,10 @@ pub const Canvas = struct {
 
     pub fn set_fill(self: Canvas, color: nsweep.Color) void {
         canvas_set_fill(self.id, color.r, color.g, color.b);
+    }
+
+    pub fn fill_text(self: Canvas, text: []const u8, x: i32, y: i32) void {
+        canvas_fill_text(self.id, text.ptr, text.len, x, y);
     }
 };
 
@@ -78,6 +83,9 @@ pub const View = struct {
         base_canvas.set_fill(.{ .r = 227, .g = 216, .b = 167 });
         base_canvas.fill();
         mid_canvas.set_fill(cell.number_color);
+        const center = get_cell_center(cell);
+        const center_coordinates = self.point_to_coordinates(center);
+        mid_canvas.fill_text(cell.number, center_coordinates.x, center_coordinates.y);
     }
 };
 

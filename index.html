@@ -16,6 +16,7 @@
 		<script>
 			WebAssembly.instantiateStreaming(fetch("zig-out/bin/nsweep.wasm"), {env: zig_environment}).then(
 				(result) => {
+					wasm = result.instance.exports;
 					result.instance.exports.test_canvas();
 				},
 			);

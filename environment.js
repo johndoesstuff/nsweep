@@ -14,6 +14,7 @@ let canvases = [
 ];
 
 let ctxs = canvases.map(e => e.getContext("2d"));
+const text_decoder = new TextDecoder("utf-8");
 
 let zig_environment = {
 	get_width: function() { return canvas.width },
@@ -27,6 +28,11 @@ let zig_environment = {
 	canvas_move_to: function(c, x, y) { ctxs[c].moveTo(x, y) },
 	canvas_fill: function(c) { ctxs[c].fill() },
 	canvas_set_fill: function(c, r, g, b) { ctxs[c].fillStyle = `rgb(${r}, ${g}, ${b})` },
+	canvas_fill_text: function(c, ptr, len, x, y) {
+		const bytes = new Uint8Array(wasm.memory.buffer, ptr, len);
+		const str = text_decoder.decode(bytes);
+		ctxs[c].fillText(str, x, y);
+	}
 }
 
 function resize() {
