@@ -1,6 +1,18 @@
 const renderer = @import("render.zig");
 const std = @import("std");
 
+pub const Generator = struct {
+    name: []const u8,
+    rules: []const GeneratorRule,
+};
+
+// rules consist of a generated shape and an array of the shapes and transforms
+// that can spawn from it
+pub const GeneratorRule = struct {
+    a: GeneratedShape,
+    b: []const std.meta.Tuple(&.{ GeneratedShape, GeneratedTransform }),
+};
+
 pub const Ruleset = struct {
     negative_mines: bool, // mines of negative value are possible
     multiple_mines: bool, // >1 mines per square are possible
