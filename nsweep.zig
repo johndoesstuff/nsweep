@@ -1,9 +1,22 @@
 const renderer = @import("render.zig");
 const std = @import("std");
+const cyclotomic = @import("cyclotomics.zig");
 
 pub const Generator = struct {
     name: []const u8,
     rules: []const GeneratorRule,
+};
+
+// shape prototypes have names to identify them for tiling
+pub const GeneratedShape = struct {
+    name: []const u8,
+    points: []const cyclotomic.CyclotomicPoint,
+};
+
+// all transforms are linear î, ĵ
+pub const GeneratedTransform = struct {
+    ihat: cyclotomic.CyclotomicPoint,
+    jhat: cyclotomic.CyclotomicPoint,
 };
 
 // rules consist of a generated shape and an array of the shapes and transforms
