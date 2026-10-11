@@ -1,6 +1,6 @@
 const renderer = @import("render.zig");
-const std = @import("std");
 const cyclotomic = @import("cyclotomics.zig");
+const std = @import("std");
 
 pub const Generator = struct {
     name: []const u8,
@@ -86,7 +86,7 @@ export fn test_canvas() void {
 
     const cell: Cell = .{
         .mines = 0,
-        .number = allocator.dupeZ(u8, "5") catch unreachable,
+        .number = allocator.dupeSentinel(u8, "5") catch unreachable,
         .number_color = .{ .r = 100, .g = 100, .b = 100 },
         .shape = points,
         .neighbors = .empty,
