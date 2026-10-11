@@ -25,3 +25,57 @@ pub const GeneratedTransform = struct {
     jhat: cyclotomic.CyclotomicPoint,
     offset: cyclotomic.CyclotomicPoint,
 };
+
+const allocator = std.heap.page_allocator;
+const grid_square: GeneratedShape = .{
+    "grid-square",
+    .{
+        cyclotomic.from_xy(allocator, 1, 1),
+        cyclotomic.from_xy(allocator, 1, -1),
+        cyclotomic.from_xy(allocator, -1, 1),
+        cyclotomic.from_xy(allocator, -1, -1),
+    },
+};
+
+pub const grid: Generator = .{
+    "grid-generator",
+    .{
+        .{
+            grid_square,
+            .{
+                .{
+                    grid_square,
+                    .{
+                        cyclotomic.from_xy(allocator, 0, 1),
+                        cyclotomic.from_xy(allocator, 1, 0),
+                        cyclotomic.from_xy(allocator, 0, 1),
+                    },
+                },
+                .{
+                    grid_square,
+                    .{
+                        cyclotomic.from_xy(allocator, 0, 1),
+                        cyclotomic.from_xy(allocator, 1, 0),
+                        cyclotomic.from_xy(allocator, 0, -1),
+                    },
+                },
+                .{
+                    grid_square,
+                    .{
+                        cyclotomic.from_xy(allocator, 0, 1),
+                        cyclotomic.from_xy(allocator, 1, 0),
+                        cyclotomic.from_xy(allocator, 1, 0),
+                    },
+                },
+                .{
+                    grid_square,
+                    .{
+                        cyclotomic.from_xy(allocator, 0, 1),
+                        cyclotomic.from_xy(allocator, 1, 0),
+                        cyclotomic.from_xy(allocator, -1, 0),
+                    },
+                },
+            },
+        },
+    },
+};

@@ -56,15 +56,32 @@ pub const CyclotomicPoint = struct {
 
         // now we reduce
 
-        var modulus = try cyclotomic_coeffs(allocator, order);
-        defer modulus.deinit(allocator);
-        reduce(new_coeffs.items, modulus.items);
-        new_coeffs.shrinkRetainingCapacity(modulus.items.len - 1);
+        try reduce_by_order(allocator, &new_coeffs, order);
 
         self.coeffs.deinit(allocator);
         self.order = order;
         self.degree = phi(order);
         self.coeffs = new_coeffs;
+    }
+
+    // r * e^(2πi * k / n), the angle k/n of a turn with radius r
+    pub fn from_angle(allocator: std.mem.Allocator, k: u32, n: u32, r: i32) !CyclotomicPoint {
+        // lowest terms so the order stays as small as possible
+        const g = std.math.gcd(k, n);
+        const order = n / g;
+        var coeffs: std.ArrayList(i32) = .empty;
+        errdefer coeffs.deinit(allocator);
+        try coeffs.appendNTimes(allocator, 0, order);
+        coeffs.items[(k / g) % order] = r;
+        try reduce_by_order(allocator, &coeffs, order);
+        return .{ .order = order, .degree = phi(order), .denom = 1, .coeffs = coeffs };
+    }
+
+    // x + y * i as a point of order 4
+    pub fn from_xy(allocator: std.mem.Allocator, x: i32, y: i32) !CyclotomicPoint {
+        var coeffs: std.ArrayList(i32) = .empty;
+        try coeffs.appendSlice(allocator, &.{ x, y });
+        return .{ .order = 4, .degree = 2, .denom = 1, .coeffs = coeffs };
     }
 
     pub fn clone(self: CyclotomicPoint, allocator: std.mem.Allocator) !CyclotomicPoint {
@@ -113,10 +130,7 @@ pub const CyclotomicPoint = struct {
         }
 
         // then reduce back down to degree length
-        var modulus = try cyclotomic_coeffs(allocator, order);
-        defer modulus.deinit(allocator);
-        reduce(product.items, modulus.items);
-        product.shrinkRetainingCapacity(modulus.items.len - 1);
+        try reduce_by_order(allocator, &product, order);
 
         a.coeffs.deinit(allocator);
         a.coeffs = product;
@@ -125,6 +139,14 @@ pub const CyclotomicPoint = struct {
         return a;
     }
 };
+
+// reduce a polynomial in ζ_order down to degree length
+pub fn reduce_by_order(allocator: std.mem.Allocator, poly: *std.ArrayList(i32), order: u32) !void {
+    var modulus = try cyclotomic_coeffs(allocator, order);
+    defer modulus.deinit(allocator);
+    reduce(poly.items, modulus.items);
+    poly.shrinkRetainingCapacity(modulus.items.len - 1);
+}
 
 // reduce a polynomial in place modulo a monic polynomial, the top coeffs end up 0
 pub fn reduce(coeffs: []i32, modulus: []const i32) void {
