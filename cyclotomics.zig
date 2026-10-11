@@ -66,10 +66,68 @@ pub const CyclotomicPoint = struct {
         self.degree = phi(order);
         self.coeffs = new_coeffs;
     }
+
+    pub fn clone(self: CyclotomicPoint, allocator: std.mem.Allocator) !CyclotomicPoint {
+        var copy = self;
+        copy.coeffs = try self.coeffs.clone(allocator);
+        return copy;
+    }
+
+    // self + other as a new point, both are promoted to a common order first
+    pub fn add(self: CyclotomicPoint, allocator: std.mem.Allocator, other: CyclotomicPoint) !CyclotomicPoint {
+        const order = std.math.lcm(self.order, other.order);
+        var a = try self.clone(allocator);
+        errdefer a.deinit(allocator);
+        var b = try other.clone(allocator);
+        defer b.deinit(allocator);
+        try a.promote(allocator, order);
+        try b.promote(allocator, order);
+
+        // a/da + b/db = (a*db + b*da) / (da*db)
+        for (a.coeffs.items, 0..) |_, i| {
+            a.coeffs.items[i] = a.coeffs.items[i] * b.denom + b.coeffs.items[i] * a.denom;
+        }
+        a.denom *= b.denom;
+        a.canonicalize();
+        return a;
+    }
+
+    // self * other as a new point, both are promoted to a common order first
+    pub fn mul(self: CyclotomicPoint, allocator: std.mem.Allocator, other: CyclotomicPoint) !CyclotomicPoint {
+        const order = std.math.lcm(self.order, other.order);
+        var a = try self.clone(allocator);
+        errdefer a.deinit(allocator);
+        var b = try other.clone(allocator);
+        defer b.deinit(allocator);
+        try a.promote(allocator, order);
+        try b.promote(allocator, order);
+
+        // multiply as polynomials in ζ, the product is up to 2 * degree long
+        var product: std.ArrayList(i32) = .empty;
+        errdefer product.deinit(allocator);
+        try product.appendNTimes(allocator, 0, a.coeffs.items.len + b.coeffs.items.len);
+        for (a.coeffs.items, 0..) |x, i| {
+            for (b.coeffs.items, 0..) |y, j| {
+                product.items[i + j] += x * y;
+            }
+        }
+
+        // then reduce back down to degree length
+        var modulus = try cyclotomic_coeffs(allocator, order);
+        defer modulus.deinit(allocator);
+        reduce(product.items, modulus.items);
+        product.shrinkRetainingCapacity(modulus.items.len - 1);
+
+        a.coeffs.deinit(allocator);
+        a.coeffs = product;
+        a.denom *= b.denom;
+        a.canonicalize();
+        return a;
+    }
 };
 
 // reduce a polynomial in place modulo a monic polynomial, the top coeffs end up 0
-fn reduce(coeffs: []i32, modulus: []const i32) void {
+pub fn reduce(coeffs: []i32, modulus: []const i32) void {
     const degree = modulus.len - 1;
     var i = coeffs.len;
     while (i > degree) {

@@ -1,30 +1,7 @@
 const renderer = @import("render.zig");
 const cyclotomic = @import("cyclotomics.zig");
+const generator = @import("generator.zig");
 const std = @import("std");
-
-pub const Generator = struct {
-    name: []const u8,
-    rules: []const GeneratorRule,
-};
-
-// shape prototypes have names to identify them for tiling
-pub const GeneratedShape = struct {
-    name: []const u8,
-    points: []const cyclotomic.CyclotomicPoint,
-};
-
-// all transforms are linear î, ĵ
-pub const GeneratedTransform = struct {
-    ihat: cyclotomic.CyclotomicPoint,
-    jhat: cyclotomic.CyclotomicPoint,
-};
-
-// rules consist of a generated shape and an array of the shapes and transforms
-// that can spawn from it
-pub const GeneratorRule = struct {
-    a: GeneratedShape,
-    b: []const std.meta.Tuple(&.{ GeneratedShape, GeneratedTransform }),
-};
 
 pub const Ruleset = struct {
     negative_mines: bool, // mines of negative value are possible
@@ -86,7 +63,7 @@ export fn test_canvas() void {
 
     const cell: Cell = .{
         .mines = 0,
-        .number = allocator.dupeSentinel(u8, "5") catch unreachable,
+        .number = allocator.dupeSentinel(u8, "5", 0) catch unreachable,
         .number_color = .{ .r = 100, .g = 100, .b = 100 },
         .shape = points,
         .neighbors = .empty,
