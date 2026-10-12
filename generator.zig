@@ -67,8 +67,7 @@ pub fn generate_step(allocator: std.mem.Allocator, generator: Generator, board: 
             const shape = spawn_tuple[0];
             const transform = spawn_tuple[1];
 
-            // TODO: merge spawn transform and parent transform
-            const final_transform = transform;
+            const final_transform = merge_transform(transform, parent.transform);
             const implemented: ImplementedShape = .{
                 .name = shape.name,
                 .points = shape.points,
@@ -84,6 +83,17 @@ pub fn generate_step(allocator: std.mem.Allocator, generator: Generator, board: 
         }
     }
     try board.appendSlice(new_shapes.items);
+}
+
+// merging applies b first then a
+pub fn merge_transform(allocator: std.mem.Allocator, a: GeneratedTransform, b: GeneratedTransform) !GeneratedTransform {
+    var offset = try a.ihat.mul(allocator, b.offset);
+    defer offset.deinit(allocator);
+    return .{
+        .ihat = try a.ihat.mul(allocator, b.ihat),
+        .jhat = try a.ihat.mul(allocator, b.jhat),
+        .offset = try offset.add(allocator, a.offset),
+    };
 }
 
 pub fn grid(allocator: std.mem.Allocator) !Generator {
