@@ -138,6 +138,28 @@ pub const CyclotomicPoint = struct {
         a.canonicalize();
         return a;
     }
+
+    // self - other as a new point
+    pub fn sub(self: CyclotomicPoint, allocator: std.mem.Allocator, other: CyclotomicPoint) !CyclotomicPoint {
+        var negated = try other.clone(allocator);
+        defer negated.deinit(allocator);
+        for (negated.coeffs.items, 0..) |_, i| {
+            negated.coeffs.items[i] *= -1;
+        }
+        return self.add(allocator, negated);
+    }
+
+    // equal when the difference is 0
+    pub fn eql(self: CyclotomicPoint, allocator: std.mem.Allocator, other: CyclotomicPoint) !bool {
+        var difference = try self.sub(allocator, other);
+        defer difference.deinit(allocator);
+        for (difference.coeffs.items) |c| {
+            if (c != 0) {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 
 // reduce a polynomial in ζ_order down to degree length
