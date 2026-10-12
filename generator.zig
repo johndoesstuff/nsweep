@@ -46,7 +46,7 @@ const CyclotomicPoint = cyclotomic.CyclotomicPoint;
 // child that lands exactly on a shape already on the board is dropped
 pub fn generate_step(allocator: std.mem.Allocator, generator: Generator, board: *GeneratedBoard) !void {
     var new_shapes = std.ArrayList(ImplementedShape).init(allocator);
-    const parents = GeneratedBoard.*;
+    const parents = board.*;
     for (parents.items) |parent| {
         // for each parent look for generator rule and spawn implemented
         // shapes with transforms
@@ -67,15 +67,32 @@ pub fn generate_step(allocator: std.mem.Allocator, generator: Generator, board: 
             const shape = spawn_tuple[0];
             const transform = spawn_tuple[1];
 
-            const final_transform = merge_transform(transform, parent.transform);
+            const final_transform = merge_transform(allocator, transform, parent.transform);
             const implemented: ImplementedShape = .{
                 .name = shape.name,
                 .points = shape.points,
                 .transform = final_transform,
             };
 
-            const overlap = false;
-            // TODO: check for overlaps
+            var overlap = false;
+            for (parents.items) |potential_overlap| {
+                if (std.mem.eql(u8, potential_overlap.name, implemented.name)) {
+                    if (implemented.transform.eql(potential_overlap.transform)) {
+                        overlap = true;
+                        break;
+                    }
+                }
+            }
+
+            for (new_shapes.items) |potential_overlap| {
+                if (std.mem.eql(u8, potential_overlap.name, implemented.name)) {
+                    if (implemented.transform.eql(potential_overlap.transform)) {
+                        overlap = true;
+                        break;
+                    }
+                }
+                if (overlap) break;
+            }
 
             if (!overlap) {
                 try new_shapes.append(implemented);
