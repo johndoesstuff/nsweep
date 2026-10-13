@@ -37,7 +37,9 @@ let zig_environment = {
 		const bytes = new Uint8Array(wasm.memory.buffer, ptr, len);
 		const str = text_decoder.decode(bytes);
 		ctxs[c].fillText(str, x, y);
-	}
+	},
+	canvas_clear_rect: function(c, x0, y0, x1, y1) { ctxs[c].clearRect(x0, y0, x1, y1) },
+	clear_all: function() { ctxs.forEach(e => e.clearRect(0, 0, canvas.width, canvas.height)); },
 }
 
 function resize() {

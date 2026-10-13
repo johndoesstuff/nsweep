@@ -10,6 +10,8 @@ pub extern fn canvas_move_to(id: u32, x: i32, y: i32) void;
 pub extern fn canvas_fill(id: u32) void;
 pub extern fn canvas_set_fill(id: u32, r: u8, g: u8, b: u8) void;
 pub extern fn canvas_fill_text(id: u32, ptr: [*]const u8, len: usize, x: i32, y: i32) void;
+pub extern fn canvas_clear_rect(id: u32, x0: i32, y0: i32, x1: i32, y1: i32) void;
+pub extern fn clear_all() void;
 
 pub extern fn render() void;
 
@@ -42,6 +44,10 @@ pub const Canvas = struct {
 
     pub fn fill_text(self: Canvas, text: []const u8, x: i32, y: i32) void {
         canvas_fill_text(self.id, text.ptr, text.len, x, y);
+    }
+
+    pub fn clear_rect(self: Canvas, x0: i32, y0: i32, x1: i32, y1: i32) void {
+        canvas_clear_rect(self.id, x0, y0, x1, y1);
     }
 };
 

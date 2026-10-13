@@ -134,6 +134,7 @@ var mouse_x: i32 = 0;
 var mouse_y: i32 = 0;
 
 export fn render_board() void {
+    renderer.clear_all();
     var view: renderer.View = .{
         .x = @floatFromInt(@divTrunc(renderer.get_width(), 2)),
         .y = @floatFromInt(@divTrunc(renderer.get_height(), 2)),
