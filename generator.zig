@@ -33,6 +33,10 @@ pub const GeneratedTransform = struct {
     ihat: cyclotomic.CyclotomicPoint,
     jhat: cyclotomic.CyclotomicPoint,
     offset: cyclotomic.CyclotomicPoint,
+
+    pub fn eql(self: GeneratedTransform, allocator: std.mem.Allocator, other: GeneratedTransform) !bool {
+        return try self.ihat.eql(allocator, other.ihat) and try self.jhat.eql(allocator, other.jhat) and try self.offset.eql(allocator, other.offset);
+    }
 };
 
 // a generated board stores an array of implemented shapes which can be
@@ -45,12 +49,13 @@ const CyclotomicPoint = cyclotomic.CyclotomicPoint;
 // every implemented shape on the board spawns the children of its rule, a
 // child that lands exactly on a shape already on the board is dropped
 pub fn generate_step(allocator: std.mem.Allocator, generator: Generator, board: *GeneratedBoard) !void {
-    var new_shapes = std.ArrayList(ImplementedShape).init(allocator);
+    var new_shapes: std.ArrayList(ImplementedShape) = .empty;
+    defer new_shapes.deinit(allocator);
     const parents = board.*;
     for (parents.items) |parent| {
         // for each parent look for generator rule and spawn implemented
         // shapes with transforms
-        var generator_rule = .empty;
+        var generator_rule: ?GeneratorRule = null;
         const parent_name = parent.name;
         for (generator.rules) |rule| {
             const rule_name = rule.a.name;
@@ -59,15 +64,13 @@ pub fn generate_step(allocator: std.mem.Allocator, generator: Generator, board: 
                 break;
             }
         }
-        if (generator_rule == .empty) {
-            // unable to find rule for parent
-            continue;
-        }
-        for (generator_rule.b) |spawn_tuple| {
+        // unable to find rule for parent
+        const found_rule = generator_rule orelse continue;
+        for (found_rule.b) |spawn_tuple| {
             const shape = spawn_tuple[0];
             const transform = spawn_tuple[1];
 
-            const final_transform = merge_transform(allocator, transform, parent.transform);
+            const final_transform = try merge_transform(allocator, transform, parent.transform);
             const implemented: ImplementedShape = .{
                 .name = shape.name,
                 .points = shape.points,
@@ -77,7 +80,7 @@ pub fn generate_step(allocator: std.mem.Allocator, generator: Generator, board: 
             var overlap = false;
             for (parents.items) |potential_overlap| {
                 if (std.mem.eql(u8, potential_overlap.name, implemented.name)) {
-                    if (implemented.transform.eql(potential_overlap.transform)) {
+                    if (try implemented.transform.eql(allocator, potential_overlap.transform)) {
                         overlap = true;
                         break;
                     }
@@ -86,7 +89,7 @@ pub fn generate_step(allocator: std.mem.Allocator, generator: Generator, board: 
 
             for (new_shapes.items) |potential_overlap| {
                 if (std.mem.eql(u8, potential_overlap.name, implemented.name)) {
-                    if (implemented.transform.eql(potential_overlap.transform)) {
+                    if (try implemented.transform.eql(allocator, potential_overlap.transform)) {
                         overlap = true;
                         break;
                     }
@@ -95,11 +98,11 @@ pub fn generate_step(allocator: std.mem.Allocator, generator: Generator, board: 
             }
 
             if (!overlap) {
-                try new_shapes.append(implemented);
+                try new_shapes.append(allocator, implemented);
             }
         }
     }
-    try board.appendSlice(new_shapes.items);
+    try board.appendSlice(allocator, new_shapes.items);
 }
 
 // merging applies b first then a
@@ -140,10 +143,9 @@ pub fn grid(allocator: std.mem.Allocator) !Generator {
 }
 
 pub fn translate(allocator: std.mem.Allocator, x: i32, y: i32) !GeneratedTransform {
-    const t: GeneratedTransform = .{
-        CyclotomicPoint.from_xy(allocator, 0, 1),
-        CyclotomicPoint.from_xy(allocator, 1, 0),
-        CyclotomicPoint.from_xy(allocator, x, y),
+    return .{
+        .ihat = try CyclotomicPoint.from_xy(allocator, 1, 0),
+        .jhat = try CyclotomicPoint.from_xy(allocator, 0, 1),
+        .offset = try CyclotomicPoint.from_xy(allocator, x, y),
     };
-    return t;
 }

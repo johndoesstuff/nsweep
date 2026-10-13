@@ -160,6 +160,26 @@ pub const CyclotomicPoint = struct {
         }
         return true;
     }
+
+    // evaluate at ζ = e^(2πi / order) to get plain floating point x, y
+    pub fn to_xy(self: CyclotomicPoint) Xy {
+        var x: f64 = 0;
+        var y: f64 = 0;
+        const order: f64 = @floatFromInt(self.order);
+        for (self.coeffs.items, 0..) |c, k| {
+            const angle = 2.0 * std.math.pi * @as(f64, @floatFromInt(k)) / order;
+            const coeff: f64 = @floatFromInt(c);
+            x += coeff * @cos(angle);
+            y += coeff * @sin(angle);
+        }
+        const denom: f64 = @floatFromInt(self.denom);
+        return .{ .x = x / denom, .y = y / denom };
+    }
+};
+
+pub const Xy = struct {
+    x: f64,
+    y: f64,
 };
 
 // reduce a polynomial in ζ_order down to degree length

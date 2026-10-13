@@ -51,31 +51,92 @@ pub const Color = struct {
     b: u8,
 };
 
+// turn a generated board into an actual board, two cells are neighbors when
+// their shapes share a point. neighbor pointers point into the returned list
+// so it must not grow afterwards
+pub fn crystalize_generated(allocator: std.mem.Allocator, board: generator.GeneratedBoard) !std.ArrayList(Cell) {
+    // exact transformed points of every shape, kept for the neighbor check
+    var exact: std.ArrayList(std.ArrayList(cyclotomic.CyclotomicPoint)) = .empty;
+    defer {
+        for (exact.items) |*points| {
+            for (points.items) |*point| point.deinit(allocator);
+            points.deinit(allocator);
+        }
+        exact.deinit(allocator);
+    }
+
+    var cells: std.ArrayList(Cell) = .empty;
+    errdefer cells.deinit(allocator);
+    for (board.items) |shape| {
+        var points: std.ArrayList(cyclotomic.CyclotomicPoint) = .empty;
+        var outline: std.ArrayList(Point) = .empty;
+        for (shape.points) |point| {
+            // transforms apply as ihat * point + offset, same as merge_transform
+            var scaled = try shape.transform.ihat.mul(allocator, point);
+            defer scaled.deinit(allocator);
+            const moved = try scaled.add(allocator, shape.transform.offset);
+            try points.append(allocator, moved);
+            const xy = moved.to_xy();
+            try outline.append(allocator, .{ .x = @floatCast(xy.x), .y = @floatCast(xy.y) });
+        }
+        try exact.append(allocator, points);
+        try cells.append(allocator, .{
+            .mines = 0,
+            .revealed = false,
+            .number = "",
+            .number_color = .{ .r = 0, .g = 0, .b = 0 },
+            .shape = outline,
+            .neighbors = .empty,
+            .linked = .empty,
+        });
+    }
+
+    for (cells.items, 0..) |*a, i| {
+        for (cells.items[i + 1 ..], i + 1..) |*b, j| {
+            if (try share_point(allocator, exact.items[i].items, exact.items[j].items)) {
+                try a.neighbors.append(allocator, b);
+                try b.neighbors.append(allocator, a);
+            }
+        }
+    }
+    return cells;
+}
+
+fn share_point(allocator: std.mem.Allocator, a: []const cyclotomic.CyclotomicPoint, b: []const cyclotomic.CyclotomicPoint) !bool {
+    for (a) |point_a| {
+        for (b) |point_b| {
+            if (try point_a.eql(allocator, point_b)) return true;
+        }
+    }
+    return false;
+}
+
 export fn test_canvas() void {
     const allocator = std.heap.page_allocator;
     var points: std.ArrayList(Point) = .empty;
     defer points.deinit(allocator);
 
-    points.append(allocator, .{ .x = 100, .y = 200 }) catch unreachable;
-    points.append(allocator, .{ .x = 200, .y = 200 }) catch unreachable;
-    points.append(allocator, .{ .x = 200, .y = 100 }) catch unreachable;
-    points.append(allocator, .{ .x = 130, .y = 130 }) catch unreachable;
+    const grid_generator = generator.grid(allocator) catch unreachable;
+    var generated_board: generator.GeneratedBoard = .empty;
+    const seed = grid_generator.rules[0].a;
+    generated_board.append(allocator, .{
+        .name = seed.name,
+        .points = seed.points,
+        .transform = generator.translate(allocator, 0, 0) catch unreachable,
+    }) catch unreachable;
 
-    const cell: Cell = .{
-        .mines = 0,
-        .number = allocator.dupeSentinel(u8, "5", 0) catch unreachable,
-        .number_color = .{ .r = 100, .g = 100, .b = 100 },
-        .shape = points,
-        .neighbors = .empty,
-        .linked = .empty,
-        .revealed = false,
-    };
+    for (0..5) |_| {
+        generator.generate_step(allocator, grid_generator, &generated_board) catch unreachable;
+    }
+    const cells = crystalize_generated(allocator, generated_board) catch unreachable;
 
     var view: renderer.View = .{
-        .x = 0.0,
-        .y = 0.0,
-        .zoom = 1.0,
+        .x = @floatFromInt(@divTrunc(renderer.get_width(), 2)),
+        .y = @floatFromInt(@divTrunc(renderer.get_height(), 2)),
+        .zoom = 20.0,
     };
-    view.render_cell(cell);
+    for (cells.items) |c| {
+        view.render_cell(c);
+    }
     renderer.render();
 }
