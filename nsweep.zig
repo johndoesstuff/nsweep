@@ -11,6 +11,7 @@ pub const Ruleset = struct {
     lower_bounds: bool, // numbers like >n are possible
     not_bounds: bool, // numbers like !n are possible
     connected_cells: bool, // randomly linked cells
+    mine_density: f32, // how likely a mine is to spawn between [0, 1]
 };
 
 pub const Board = struct {
@@ -147,7 +148,7 @@ export fn render_board() void {
     renderer.render();
 }
 
-export fn initialize_board() void {
+export fn initialize_board(rng_seed: u32) void {
     const allocator = std.heap.page_allocator;
     var points: std.ArrayList(Point) = .empty;
     defer points.deinit(allocator);
@@ -171,8 +172,27 @@ export fn initialize_board() void {
             .lower_bounds = false,
             .not_bounds = false,
             .connected_cells = false,
+            .mine_density = 0.15,
         },
     };
+    generate_mines(&current_board.?, rng_seed);
+}
+
+fn generate_mines(board: *Board, seed: u32) void {
+    var prng = std.Random.DefaultPrng.init(seed);
+    const density = board.rules.mine_density;
+    for (board.cells.items) |*cell| {
+        if (prng.random().float(f32) < density) {
+            cell.mines = 1;
+        }
+    }
+    for (board.cells.items) |*cell| {
+        var neighbor_mines: i32 = 0;
+        for (cell.neighbors.items) |neighbor| {
+            neighbor_mines += neighbor.mines;
+        }
+        cell.number = std.fmt.allocPrint(std.heap.page_allocator, "{d}", .{neighbor_mines}) catch unreachable;
+    }
 }
 
 export fn update_mouse(x: i32, y: i32) void {

@@ -60,7 +60,7 @@ window.onmousemove = mousemove;
 WebAssembly.instantiateStreaming(fetch("zig-out/bin/nsweep.wasm"), {env: zig_environment}).then(
 	(result) => {
 		wasm = result.instance.exports;
-		wasm.initialize_board();
+		wasm.initialize_board((Math.random() * 2 ** 32) >>> 0);
 		function render_frame() {
 			wasm.update_mouse(mouse_position.x, mouse_position.y);
 			wasm.render_board();
