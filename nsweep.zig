@@ -152,16 +152,12 @@ export fn initialize_board() void {
     var points: std.ArrayList(Point) = .empty;
     defer points.deinit(allocator);
 
-    const grid_generator = generator.grid(allocator) catch unreachable;
+    const grid_generator = generator.snub_square(allocator) catch unreachable;
     var generated_board: generator.GeneratedBoard = .empty;
     const seed = grid_generator.rules[0].a;
-    generated_board.append(allocator, .{
-        .name = seed.name,
-        .points = seed.points,
-        .transform = generator.translate(allocator, 0, 0) catch unreachable,
-    }) catch unreachable;
+    generated_board.append(allocator, generator.implement(allocator, seed, generator.translate(allocator, 0, 0) catch unreachable) catch unreachable) catch unreachable;
 
-    for (0..5) |_| {
+    for (0..8) |_| {
         generator.generate_step(allocator, grid_generator, &generated_board) catch unreachable;
     }
     const cells = crystalize_generated(allocator, generated_board) catch unreachable;

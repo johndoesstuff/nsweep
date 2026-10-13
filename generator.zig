@@ -26,6 +26,9 @@ pub const ImplementedShape = struct {
     name: []const u8,
     points: []const cyclotomic.CyclotomicPoint,
     transform: GeneratedTransform,
+    // sum of the transformed points, used to spot shapes landing on the same
+    // spot even when rotated differently
+    center: cyclotomic.CyclotomicPoint,
 };
 
 // all transforms are linear î, ĵ with offset
@@ -70,17 +73,14 @@ pub fn generate_step(allocator: std.mem.Allocator, generator: Generator, board: 
             const shape = spawn_tuple[0];
             const transform = spawn_tuple[1];
 
-            const final_transform = try merge_transform(allocator, transform, parent.transform);
-            const implemented: ImplementedShape = .{
-                .name = shape.name,
-                .points = shape.points,
-                .transform = final_transform,
-            };
+            // the spawn transform is in the parent's frame so the parent is applied last
+            const final_transform = try merge_transform(allocator, parent.transform, transform);
+            const implemented = try implement(allocator, shape, final_transform);
 
             var overlap = false;
             for (parents.items) |potential_overlap| {
                 if (std.mem.eql(u8, potential_overlap.name, implemented.name)) {
-                    if (try implemented.transform.eql(allocator, potential_overlap.transform)) {
+                    if (try implemented.center.eql(allocator, potential_overlap.center)) {
                         overlap = true;
                         break;
                     }
@@ -89,7 +89,7 @@ pub fn generate_step(allocator: std.mem.Allocator, generator: Generator, board: 
 
             for (new_shapes.items) |potential_overlap| {
                 if (std.mem.eql(u8, potential_overlap.name, implemented.name)) {
-                    if (try implemented.transform.eql(allocator, potential_overlap.transform)) {
+                    if (try implemented.center.eql(allocator, potential_overlap.center)) {
                         overlap = true;
                         break;
                     }
@@ -103,6 +103,16 @@ pub fn generate_step(allocator: std.mem.Allocator, generator: Generator, board: 
         }
     }
     try board.appendSlice(allocator, new_shapes.items);
+}
+
+// instance a shape prototype with a transform
+pub fn implement(allocator: std.mem.Allocator, shape: GeneratedShape, transform: GeneratedTransform) !ImplementedShape {
+    var center = try transform.offset.mul(allocator, try CyclotomicPoint.from_xy(allocator, @intCast(shape.points.len), 0));
+    for (shape.points) |p| {
+        const scaled = try transform.ihat.mul(allocator, p);
+        center = try center.add(allocator, scaled);
+    }
+    return .{ .name = shape.name, .points = shape.points, .transform = transform, .center = center };
 }
 
 // merging applies b first then a
@@ -147,5 +157,72 @@ pub fn translate(allocator: std.mem.Allocator, x: i32, y: i32) !GeneratedTransfo
         .ihat = try CyclotomicPoint.from_xy(allocator, 1, 0),
         .jhat = try CyclotomicPoint.from_xy(allocator, 0, 1),
         .offset = try CyclotomicPoint.from_xy(allocator, x, y),
+    };
+}
+
+// 3.3.4.3.4 (snub square), squares in two orientations a twelfth of a turn
+// apart with a triangle on every square edge, the two square orientations
+// are mirror images in how their triangles attach so they need separate
+// rules even though they are the same shape, every triangle has square a on
+// its first edge, another triangle on its second and square b on its third
+pub fn snub_square(allocator: std.mem.Allocator) !Generator {
+    const square_points = try allocator.dupe(CyclotomicPoint, &.{
+        try CyclotomicPoint.from_xy(allocator, 0, 0),
+        try CyclotomicPoint.from_xy(allocator, 2, 0),
+        try CyclotomicPoint.from_xy(allocator, 2, 2),
+        try CyclotomicPoint.from_xy(allocator, 0, 2),
+    });
+    const square_a: GeneratedShape = .{ .name = "snub-square-a", .points = square_points };
+    const square_b: GeneratedShape = .{ .name = "snub-square-b", .points = square_points };
+    const tri: GeneratedShape = .{
+        .name = "snub-triangle",
+        .points = try allocator.dupe(CyclotomicPoint, &.{
+            try CyclotomicPoint.from_xy(allocator, 0, 0),
+            try CyclotomicPoint.from_xy(allocator, 2, 0),
+            try CyclotomicPoint.from_angle(allocator, 1, 6, 2),
+        }),
+    };
+    // the triangle across the second edge sits at 2 + 2ζ6
+    const across = try (try CyclotomicPoint.from_xy(allocator, 2, 0)).add(allocator, try CyclotomicPoint.from_angle(allocator, 1, 6, 2));
+
+    const rules = try allocator.dupe(GeneratorRule, &.{
+        .{
+            .a = square_a,
+            .b = try allocator.dupe(Spawn, &.{
+                .{ tri, try rotate(allocator, 6, 12, try CyclotomicPoint.from_xy(allocator, 2, 0)) },
+                .{ tri, try rotate(allocator, 9, 12, try CyclotomicPoint.from_xy(allocator, 2, 2)) },
+                .{ tri, try rotate(allocator, 0, 12, try CyclotomicPoint.from_xy(allocator, 0, 2)) },
+                .{ tri, try rotate(allocator, 3, 12, try CyclotomicPoint.from_xy(allocator, 0, 0)) },
+            }),
+        },
+        .{
+            .a = square_b,
+            .b = try allocator.dupe(Spawn, &.{
+                .{ tri, try rotate(allocator, 10, 12, try CyclotomicPoint.from_xy(allocator, 0, 0)) },
+                .{ tri, try rotate(allocator, 1, 12, try CyclotomicPoint.from_xy(allocator, 2, 0)) },
+                .{ tri, try rotate(allocator, 4, 12, try CyclotomicPoint.from_xy(allocator, 2, 2)) },
+                .{ tri, try rotate(allocator, 7, 12, try CyclotomicPoint.from_xy(allocator, 0, 2)) },
+            }),
+        },
+        .{
+            .a = tri,
+            .b = try allocator.dupe(Spawn, &.{
+                .{ square_a, try rotate(allocator, 3, 12, try CyclotomicPoint.from_xy(allocator, 2, -2)) },
+                .{ tri, try rotate(allocator, 6, 12, across) },
+                .{ square_b, try rotate(allocator, 2, 12, try CyclotomicPoint.from_xy(allocator, 0, 0)) },
+            }),
+        },
+    });
+
+    return .{ .name = "snub-square-generator", .rules = rules };
+}
+
+// turn by k/n of a full turn then move by offset
+pub fn rotate(allocator: std.mem.Allocator, k: u32, n: u32, offset: CyclotomicPoint) !GeneratedTransform {
+    const ihat = try CyclotomicPoint.from_angle(allocator, k, n, 1);
+    return .{
+        .ihat = ihat,
+        .jhat = try ihat.mul(allocator, try CyclotomicPoint.from_xy(allocator, 0, 1)),
+        .offset = offset,
     };
 }
