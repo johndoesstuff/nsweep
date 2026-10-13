@@ -43,7 +43,7 @@ pub const GeneratedTransform = struct {
 // iterated every generation step
 pub const GeneratedBoard = std.ArrayList(ImplementedShape);
 
-const Spawn = std.meta.Tuple(&.{ GeneratedShape, GeneratedTransform });
+const Spawn = @Tuple(&.{ GeneratedShape, GeneratedTransform });
 const CyclotomicPoint = cyclotomic.CyclotomicPoint;
 
 // every implemented shape on the board spawns the children of its rule, a
