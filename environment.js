@@ -65,7 +65,9 @@ WebAssembly.instantiateStreaming(fetch("zig-out/bin/nsweep.wasm"), {env: zig_env
 	(result) => {
 		wasm = result.instance.exports;
 		wasm.initialize_board((Math.random() * 2 ** 32) >>> 0);
+		let frames = 0, last = performance.now();
 		function render_frame() {
+			if (++frames, performance.now() - last >= 1000) { fps.textContent = frames + " fps"; frames = 0; last = performance.now(); }
 			wasm.update_mouse(mouse_position.x, mouse_position.y);
 			wasm.render_board();
 			window.requestAnimationFrame(render_frame);
