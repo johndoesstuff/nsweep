@@ -16,6 +16,11 @@ let canvases = [
 let ctxs = canvases.map(e => e.getContext("2d"));
 const text_decoder = new TextDecoder("utf-8");
 
+let mouse_position = {
+	x: 0,
+	y: 0,
+};
+
 let zig_environment = {
 	get_width: function() { return canvas.width },
 	get_height: function() { return canvas.height },
@@ -45,3 +50,22 @@ function resize() {
 }
 resize();
 window.onresize = resize;
+
+function mousemove(e) {
+	mouse_position.x = e.clientX;
+	mouse_position.y = e.clientY;
+}
+window.onmousemove = mousemove;
+
+WebAssembly.instantiateStreaming(fetch("zig-out/bin/nsweep.wasm"), {env: zig_environment}).then(
+	(result) => {
+		wasm = result.instance.exports;
+		wasm.initialize_board();
+		function render_frame() {
+			wasm.update_mouse(mouse_position.x, mouse_position.y);
+			wasm.render_board();
+			window.requestAnimationFrame(render_frame);
+		}
+		render_frame();
+	},
+);

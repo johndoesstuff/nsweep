@@ -53,7 +53,7 @@ const base_canvas = Canvas.init(1);
 const mid_canvas = Canvas.init(2);
 const upper_canvas = Canvas.init(3);
 
-const Coordinates = struct {
+pub const Coordinates = struct {
     x: i32,
     y: i32,
 };
@@ -70,7 +70,14 @@ pub const View = struct {
         };
     }
 
-    pub fn render_cell(self: View, cell: nsweep.Cell) void {
+    pub fn coordinates_to_point(self: View, coordinates: Coordinates) nsweep.Point {
+        return .{
+            .x = (@as(f32, @floatFromInt(coordinates.x)) - self.x) / self.zoom,
+            .y = (@as(f32, @floatFromInt(coordinates.y)) - self.y) / self.zoom,
+        };
+    }
+
+    pub fn render_cell(self: View, cell: nsweep.Cell, hover: bool) void {
         const points = cell.shape;
         const last = points.items[points.items.len - 1];
         const last_c = self.point_to_coordinates(last);
@@ -80,7 +87,11 @@ pub const View = struct {
             const coordinates: Coordinates = self.point_to_coordinates(item);
             base_canvas.line_to(coordinates.x, coordinates.y);
         }
-        base_canvas.set_fill(.{ .r = 227, .g = 216, .b = 167 });
+        if (hover) {
+            base_canvas.set_fill(.{ .r = 247, .g = 236, .b = 187 });
+        } else {
+            base_canvas.set_fill(.{ .r = 227, .g = 216, .b = 167 });
+        }
         base_canvas.fill();
         mid_canvas.set_fill(cell.number_color);
         const center = get_cell_center(cell);

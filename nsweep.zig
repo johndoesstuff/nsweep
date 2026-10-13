@@ -111,7 +111,26 @@ fn share_point(allocator: std.mem.Allocator, a: []const cyclotomic.CyclotomicPoi
     return false;
 }
 
+// casts a ray to the right and counts crossings of the shapes edges, odd count
+// means the point is inside
+pub fn point_in_cell(point: Point, cell: Cell) bool {
+    const points = cell.shape.items;
+    var inside = false;
+    var j = points.len - 1;
+    for (points, 0..) |a, i| {
+        const b = points[j];
+        if ((a.y > point.y) != (b.y > point.y)) {
+            const cross_x = (b.x - a.x) * (point.y - a.y) / (b.y - a.y) + a.x;
+            if (point.x < cross_x) inside = !inside;
+        }
+        j = i;
+    }
+    return inside;
+}
+
 var current_board: ?Board = null;
+var mouse_x: i32 = 0;
+var mouse_y: i32 = 0;
 
 export fn render_board() void {
     var view: renderer.View = .{
@@ -120,8 +139,9 @@ export fn render_board() void {
         .zoom = 20.0,
     };
     if (current_board) |board| {
+        const mouse = view.coordinates_to_point(.{ .x = mouse_x, .y = mouse_y });
         for (board.cells.items) |c| {
-            view.render_cell(c);
+            view.render_cell(c, point_in_cell(mouse, c));
         }
     }
     renderer.render();
@@ -157,4 +177,9 @@ export fn initialize_board() void {
             .connected_cells = false,
         },
     };
+}
+
+export fn update_mouse(x: i32, y: i32) void {
+    mouse_x = x;
+    mouse_y = y;
 }
