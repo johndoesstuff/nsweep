@@ -23,7 +23,7 @@ pub const Cell = struct {
     mines: i32, // signed for negative mines or multiple mines
     revealed: bool,
     number: []const u8, // string that prints for each cell
-    number_color: Color,
+    number_color: renderer.Color,
     shape: std.ArrayList(Point),
     neighbors: std.ArrayList(*Cell), // used to calculate number
     linked: std.ArrayList(*Cell), // used for variants of interdependent cells
@@ -44,12 +44,6 @@ pub const Point = struct {
             .y = self.y * c,
         };
     }
-};
-
-pub const Color = struct {
-    r: u8,
-    g: u8,
-    b: u8,
 };
 
 // turn a generated board into an actual board, two cells are neighbors when
@@ -193,6 +187,9 @@ fn generate_mines(board: *Board, seed: u32) void {
             neighbor_mines += neighbor.mines;
         }
         cell.number = std.fmt.allocPrint(std.heap.page_allocator, "{d}", .{neighbor_mines}) catch unreachable;
+        if (@abs(neighbor_mines) < 10) {
+            cell.number_color = renderer.colors[@abs(neighbor_mines)];
+        }
     }
 }
 

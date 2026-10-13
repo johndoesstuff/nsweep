@@ -17,6 +17,27 @@ pub extern fn canvas_text_baseline_middle(id: u32) void;
 
 pub extern fn render() void;
 
+pub const Color = struct {
+    r: u8,
+    g: u8,
+    b: u8,
+};
+
+pub const colors: [12]Color = .{
+    .{ .r = 0, .b = 0, .g = 0 }, // 0
+    .{ .r = 27, .b = 67, .g = 133 }, // 1
+    .{ .r = 44, .b = 135, .g = 28 }, // 2
+    .{ .r = 156, .b = 33, .g = 33 }, // 3
+    .{ .r = 32, .b = 21, .g = 117 }, // 4
+    .{ .r = 102, .b = 34, .g = 21 }, // 5
+    .{ .r = 24, .b = 110, .g = 115 }, // 6
+    .{ .r = 28, .b = 28, .g = 28 }, // 7
+    .{ .r = 87, .b = 87, .g = 87 }, // 8
+    .{ .r = 133, .b = 46, .g = 130 }, // 9
+    .{ .r = 115, .b = 107, .g = 1 }, // 10
+    .{ .r = 0, .b = 0, .g = 0 }, // 11+
+};
+
 pub const Canvas = struct {
     id: u32,
 
@@ -40,7 +61,7 @@ pub const Canvas = struct {
         canvas_fill(self.id);
     }
 
-    pub fn set_fill(self: Canvas, color: nsweep.Color) void {
+    pub fn set_fill(self: Canvas, color: Color) void {
         canvas_set_fill(self.id, color.r, color.g, color.b);
     }
 
