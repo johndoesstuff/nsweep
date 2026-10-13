@@ -39,7 +39,9 @@ let zig_environment = {
 		ctxs[c].fillText(str, x, y);
 	},
 	canvas_clear_rect: function(c, x0, y0, x1, y1) { ctxs[c].clearRect(x0, y0, x1, y1) },
-	clear_all: function() { ctxs.forEach(e => e.clearRect(0, 0, canvas.width, canvas.height)); },
+	clear_all: function() { ctxs.forEach(e => e.clearRect(0, 0, canvas.width, canvas.height)) },
+	canvas_text_align_center: function(c) { ctxs[c].textAlign = "center" },
+	canvas_text_baseline_middle: function(c) { ctxs[c].textBaseline = "middle" },
 }
 
 function resize() {

@@ -12,6 +12,8 @@ pub extern fn canvas_set_fill(id: u32, r: u8, g: u8, b: u8) void;
 pub extern fn canvas_fill_text(id: u32, ptr: [*]const u8, len: usize, x: i32, y: i32) void;
 pub extern fn canvas_clear_rect(id: u32, x0: i32, y0: i32, x1: i32, y1: i32) void;
 pub extern fn clear_all() void;
+pub extern fn canvas_text_align_center(id: u32) void;
+pub extern fn canvas_text_baseline_middle(id: u32) void;
 
 pub extern fn render() void;
 
@@ -48,6 +50,14 @@ pub const Canvas = struct {
 
     pub fn clear_rect(self: Canvas, x0: i32, y0: i32, x1: i32, y1: i32) void {
         canvas_clear_rect(self.id, x0, y0, x1, y1);
+    }
+
+    pub fn text_align_center(self: Canvas) void {
+        canvas_text_align_center(self.id);
+    }
+
+    pub fn text_baseline_middle(self: Canvas) void {
+        canvas_text_baseline_middle(self.id);
     }
 };
 
@@ -102,6 +112,8 @@ pub const View = struct {
         mid_canvas.set_fill(cell.number_color);
         const center = get_cell_center(cell);
         const center_coordinates = self.point_to_coordinates(center);
+        mid_canvas.text_align_center();
+        mid_canvas.text_baseline_middle();
         mid_canvas.fill_text(cell.number, center_coordinates.x, center_coordinates.y);
     }
 };
