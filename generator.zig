@@ -10,7 +10,7 @@ pub const Generator = struct {
 // that can spawn from it
 pub const GeneratorRule = struct {
     a: GeneratedShape,
-    b: []const std.meta.Tuple(&.{ GeneratedShape, GeneratedTransform }),
+    b: []const @Tuple(&.{ GeneratedShape, GeneratedTransform }),
 };
 
 // shape prototypes have names to identify them for tiling

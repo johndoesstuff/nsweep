@@ -111,7 +111,23 @@ fn share_point(allocator: std.mem.Allocator, a: []const cyclotomic.CyclotomicPoi
     return false;
 }
 
-export fn test_canvas() void {
+var current_board: ?Board = null;
+
+export fn render_board() void {
+    var view: renderer.View = .{
+        .x = @floatFromInt(@divTrunc(renderer.get_width(), 2)),
+        .y = @floatFromInt(@divTrunc(renderer.get_height(), 2)),
+        .zoom = 20.0,
+    };
+    if (current_board) |board| {
+        for (board.cells.items) |c| {
+            view.render_cell(c);
+        }
+    }
+    renderer.render();
+}
+
+export fn initialize_board() void {
     const allocator = std.heap.page_allocator;
     var points: std.ArrayList(Point) = .empty;
     defer points.deinit(allocator);
@@ -129,14 +145,16 @@ export fn test_canvas() void {
         generator.generate_step(allocator, grid_generator, &generated_board) catch unreachable;
     }
     const cells = crystalize_generated(allocator, generated_board) catch unreachable;
-
-    var view: renderer.View = .{
-        .x = @floatFromInt(@divTrunc(renderer.get_width(), 2)),
-        .y = @floatFromInt(@divTrunc(renderer.get_height(), 2)),
-        .zoom = 20.0,
+    current_board = .{
+        .cells = cells,
+        .rules = .{
+            .negative_mines = false,
+            .multiple_mines = false,
+            .meta_numbering = false,
+            .upper_bounds = false,
+            .lower_bounds = false,
+            .not_bounds = false,
+            .connected_cells = false,
+        },
     };
-    for (cells.items) |c| {
-        view.render_cell(c);
-    }
-    renderer.render();
 }
