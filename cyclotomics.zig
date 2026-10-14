@@ -149,10 +149,17 @@ pub const CyclotomicPoint = struct {
         return self.add(allocator, negated);
     }
 
-    // equal when the difference is 0
+    // equal when the difference is 0, points of the same order are in a
+    // unique canonical form so they compare coeff for coeff, mixed orders
+    // subtract out of a stack buffer so no heap allocation is needed
     pub fn eql(self: CyclotomicPoint, allocator: std.mem.Allocator, other: CyclotomicPoint) !bool {
-        var difference = try self.sub(allocator, other);
-        defer difference.deinit(allocator);
+        if (self.order == other.order) {
+            return self.denom == other.denom and std.mem.eql(i32, self.coeffs.items, other.coeffs.items);
+        }
+        var stack = std.heap.stackFallback(2048, allocator);
+        const scratch = stack.get();
+        var difference = try self.sub(scratch, other);
+        defer difference.deinit(scratch);
         for (difference.coeffs.items) |c| {
             if (c != 0) {
                 return false;
