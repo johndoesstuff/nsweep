@@ -23,7 +23,7 @@ pub const Color = struct {
     b: u8,
 };
 
-pub const colors: [12]Color = .{
+pub const number_colors: [12]Color = .{
     .{ .r = 0, .b = 0, .g = 0 }, // 0
     .{ .r = 27, .b = 67, .g = 133 }, // 1
     .{ .r = 44, .b = 135, .g = 28 }, // 2
@@ -37,6 +37,10 @@ pub const colors: [12]Color = .{
     .{ .r = 115, .b = 107, .g = 1 }, // 10
     .{ .r = 0, .b = 0, .g = 0 }, // 11+
 };
+
+pub const mine_color: Color = .{ .r = 28, .b = 28, .g = 28 };
+pub const board_color: Color = .{ .r = 227, .g = 216, .b = 167 };
+pub const board_hover_color: Color = .{ .r = 247, .g = 236, .b = 187 };
 
 pub const Canvas = struct {
     id: u32,
@@ -118,24 +122,37 @@ pub const View = struct {
         const points = cell.shape;
         const last = points.items[points.items.len - 1];
         const last_c = self.point_to_coordinates(last);
+        const center = get_cell_center(cell);
+        const center_coordinates = self.point_to_coordinates(center);
+
         base_canvas.move_to(last_c.x, last_c.y);
         base_canvas.begin_path();
         for (points.items) |item| {
             const coordinates: Coordinates = self.point_to_coordinates(item);
             base_canvas.line_to(coordinates.x, coordinates.y);
         }
+
         if (hover) {
-            base_canvas.set_fill(.{ .r = 247, .g = 236, .b = 187 });
+            base_canvas.set_fill(board_hover_color);
         } else {
-            base_canvas.set_fill(.{ .r = 227, .g = 216, .b = 167 });
+            base_canvas.set_fill(board_color);
         }
         base_canvas.fill();
-        mid_canvas.set_fill(cell.number_color);
-        const center = get_cell_center(cell);
-        const center_coordinates = self.point_to_coordinates(center);
-        mid_canvas.text_align_center();
-        mid_canvas.text_baseline_middle();
-        mid_canvas.fill_text(cell.number, center_coordinates.x, center_coordinates.y);
+
+        if (cell.mines == 0) {
+            mid_canvas.set_fill(cell.number_color);
+            mid_canvas.text_align_center();
+            mid_canvas.text_baseline_middle();
+            mid_canvas.fill_text(cell.number, center_coordinates.x, center_coordinates.y);
+        } else {
+            mid_canvas.begin_path();
+            for (points.items) |item| {
+                const coordinates = self.point_to_coordinates(center.add(item.add(center.mul(-1)).mul(0.5)));
+                mid_canvas.line_to(coordinates.x, coordinates.y);
+            }
+            mid_canvas.set_fill(mine_color);
+            mid_canvas.fill();
+        }
     }
 };
 
