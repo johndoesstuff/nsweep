@@ -33,6 +33,9 @@ let zig_environment = {
 	canvas_move_to: function(c, x, y) { ctxs[c].moveTo(x, y) },
 	canvas_fill: function(c) { ctxs[c].fill() },
 	canvas_set_fill: function(c, r, g, b) { ctxs[c].fillStyle = `rgb(${r}, ${g}, ${b})` },
+	canvas_stroke: function(c) { ctxs[c].stroke() },
+	canvas_set_stroke: function(c, r, g, b) { ctxs[c].strokeStyle = `rgb(${r}, ${g}, ${b})` },
+	canvas_set_line_width: function(c, w) { ctxs[c].lineWidth = w },
 	canvas_fill_text: function(c, ptr, len, x, y) {
 		const bytes = new Uint8Array(wasm.memory.buffer, ptr, len);
 		const str = text_decoder.decode(bytes);

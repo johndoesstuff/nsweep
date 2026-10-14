@@ -9,6 +9,9 @@ pub extern fn canvas_line_to(id: u32, x: i32, y: i32) void;
 pub extern fn canvas_move_to(id: u32, x: i32, y: i32) void;
 pub extern fn canvas_fill(id: u32) void;
 pub extern fn canvas_set_fill(id: u32, r: u8, g: u8, b: u8) void;
+pub extern fn canvas_stroke(id: u32) void;
+pub extern fn canvas_set_stroke(id: u32, r: u8, g: u8, b: u8) void;
+pub extern fn canvas_set_line_width(id: u32, width: f32) void;
 pub extern fn canvas_fill_text(id: u32, ptr: [*]const u8, len: usize, x: i32, y: i32) void;
 pub extern fn canvas_clear_rect(id: u32, x0: i32, y0: i32, x1: i32, y1: i32) void;
 pub extern fn clear_all() void;
@@ -67,6 +70,18 @@ pub const Canvas = struct {
 
     pub fn set_fill(self: Canvas, color: Color) void {
         canvas_set_fill(self.id, color.r, color.g, color.b);
+    }
+
+    pub fn stroke(self: Canvas) void {
+        canvas_stroke(self.id);
+    }
+
+    pub fn set_stroke(self: Canvas, color: Color) void {
+        canvas_set_stroke(self.id, color.r, color.g, color.b);
+    }
+
+    pub fn set_line_width(self: Canvas, width: f32) void {
+        canvas_set_line_width(self.id, width);
     }
 
     pub fn fill_text(self: Canvas, text: []const u8, x: i32, y: i32) void {
