@@ -186,7 +186,11 @@ fn generate_mines(board: *Board, seed: u32) void {
         for (cell.neighbors.items) |neighbor| {
             neighbor_mines += neighbor.mines;
         }
-        cell.number = std.fmt.allocPrint(std.heap.page_allocator, "{d}", .{neighbor_mines}) catch unreachable;
+        if (neighbor_mines != 0) {
+            cell.number = std.fmt.allocPrint(std.heap.page_allocator, "{d}", .{neighbor_mines}) catch unreachable;
+        } else {
+            cell.number = "";
+        }
         if (@abs(neighbor_mines) < 10) {
             cell.number_color = renderer.number_colors[@abs(neighbor_mines)];
         }
