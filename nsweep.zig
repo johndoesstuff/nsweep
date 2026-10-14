@@ -153,7 +153,7 @@ export fn initialize_board(rng_seed: u32) void {
     const seed = grid_generator.rules[0].a;
     generated_board.append(allocator, generator.implement(allocator, seed, generator.translate(allocator, 0, 0) catch unreachable) catch unreachable) catch unreachable;
 
-    for (0..8) |_| {
+    for (0..12) |_| {
         generator.generate_step(allocator, grid_generator, &generated_board) catch unreachable;
     }
     const cells = crystalize_generated(allocator, generated_board) catch unreachable;

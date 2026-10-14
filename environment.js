@@ -1,4 +1,5 @@
 let background_canvas = document.createElement("canvas");
+let stroke_canvas = document.createElement("canvas");
 let base_canvas = document.createElement("canvas");
 let mid_canvas = document.createElement("canvas");
 let upper_canvas = document.createElement("canvas");
@@ -8,6 +9,7 @@ let ctx = canvas.getContext("2d");
 
 let canvases = [
 	background_canvas,
+	stroke_canvas,
 	base_canvas,
 	mid_canvas,
 	upper_canvas,
@@ -30,12 +32,14 @@ let zig_environment = {
 	},
 	canvas_begin_path: function(c) { ctxs[c].beginPath() },
 	canvas_line_to: function(c, x, y) { ctxs[c].lineTo(x, y) },
+	canvas_close_path: function(c) { ctxs[c].closePath() },
 	canvas_move_to: function(c, x, y) { ctxs[c].moveTo(x, y) },
 	canvas_fill: function(c) { ctxs[c].fill() },
 	canvas_set_fill: function(c, r, g, b) { ctxs[c].fillStyle = `rgb(${r}, ${g}, ${b})` },
 	canvas_stroke: function(c) { ctxs[c].stroke() },
 	canvas_set_stroke: function(c, r, g, b) { ctxs[c].strokeStyle = `rgb(${r}, ${g}, ${b})` },
 	canvas_set_line_width: function(c, w) { ctxs[c].lineWidth = w },
+	canvas_line_join_round: function(c) { ctxs[c].lineJoin = "round" },
 	canvas_fill_text: function(c, ptr, len, x, y) {
 		const bytes = new Uint8Array(wasm.memory.buffer, ptr, len);
 		const str = text_decoder.decode(bytes);

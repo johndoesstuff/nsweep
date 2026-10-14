@@ -6,12 +6,14 @@ pub extern fn get_height() i32;
 
 pub extern fn canvas_begin_path(id: u32) void;
 pub extern fn canvas_line_to(id: u32, x: i32, y: i32) void;
+pub extern fn canvas_close_path(id: u32) void;
 pub extern fn canvas_move_to(id: u32, x: i32, y: i32) void;
 pub extern fn canvas_fill(id: u32) void;
 pub extern fn canvas_set_fill(id: u32, r: u8, g: u8, b: u8) void;
 pub extern fn canvas_stroke(id: u32) void;
 pub extern fn canvas_set_stroke(id: u32, r: u8, g: u8, b: u8) void;
 pub extern fn canvas_set_line_width(id: u32, width: f32) void;
+pub extern fn canvas_line_join_round(id: u32) void;
 pub extern fn canvas_fill_text(id: u32, ptr: [*]const u8, len: usize, x: i32, y: i32) void;
 pub extern fn canvas_clear_rect(id: u32, x0: i32, y0: i32, x1: i32, y1: i32) void;
 pub extern fn clear_all() void;
@@ -64,6 +66,10 @@ pub const Canvas = struct {
         canvas_move_to(self.id, x, y);
     }
 
+    pub fn close_path(self: Canvas) void {
+        canvas_close_path(self.id);
+    }
+
     pub fn fill(self: Canvas) void {
         canvas_fill(self.id);
     }
@@ -82,6 +88,10 @@ pub const Canvas = struct {
 
     pub fn set_line_width(self: Canvas, width: f32) void {
         canvas_set_line_width(self.id, width);
+    }
+
+    pub fn line_join_round(self: Canvas) void {
+        canvas_line_join_round(self.id);
     }
 
     pub fn fill_text(self: Canvas, text: []const u8, x: i32, y: i32) void {
@@ -105,9 +115,10 @@ pub const Canvas = struct {
 // the base board and a canvas for hiding the board states, revealing cells can
 // erase from the top canvas (or canvases depending on stroke details)
 const background_canvas = Canvas.init(0);
-const base_canvas = Canvas.init(1);
-const mid_canvas = Canvas.init(2);
-const upper_canvas = Canvas.init(3);
+const stroke_canvas = Canvas.init(1);
+const base_canvas = Canvas.init(2);
+const mid_canvas = Canvas.init(3);
+const upper_canvas = Canvas.init(4);
 
 pub const Coordinates = struct {
     x: i32,
@@ -141,17 +152,26 @@ pub const View = struct {
         const center_coordinates = self.point_to_coordinates(center);
 
         base_canvas.move_to(last_c.x, last_c.y);
+        stroke_canvas.move_to(last_c.x, last_c.y);
         base_canvas.begin_path();
+        stroke_canvas.begin_path();
         for (points.items) |item| {
             const coordinates: Coordinates = self.point_to_coordinates(item);
             base_canvas.line_to(coordinates.x, coordinates.y);
+            stroke_canvas.line_to(coordinates.x, coordinates.y);
         }
+        base_canvas.close_path();
+        stroke_canvas.close_path();
 
         if (hover) {
             base_canvas.set_fill(board_hover_color);
         } else {
             base_canvas.set_fill(board_color);
         }
+        stroke_canvas.set_stroke(board_color);
+        stroke_canvas.set_line_width(10);
+        stroke_canvas.line_join_round();
+        stroke_canvas.stroke();
         base_canvas.fill();
 
         if (cell.mines == 0) {
