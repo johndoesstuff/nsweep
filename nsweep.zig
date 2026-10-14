@@ -137,7 +137,13 @@ export fn render_board() void {
     if (current_board) |board| {
         const mouse = view.coordinates_to_point(.{ .x = mouse_x, .y = mouse_y });
         for (board.cells.items) |c| {
-            view.render_cell(c, point_in_cell(mouse, c));
+            var neighbor: bool = false;
+            for (c.neighbors.items) |n| {
+                if (point_in_cell(mouse, n.*)) {
+                    neighbor = true;
+                }
+            }
+            view.render_cell(c, point_in_cell(mouse, c), neighbor);
         }
     }
     renderer.render();

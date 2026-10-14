@@ -1,18 +1,20 @@
 let background_canvas = document.createElement("canvas");
-let stroke_canvas = document.createElement("canvas");
+let base_stroke_canvas = document.createElement("canvas");
 let base_canvas = document.createElement("canvas");
 let mid_canvas = document.createElement("canvas");
 let upper_canvas = document.createElement("canvas");
+let upper_stroke_canvas = document.createElement("canvas");
 
 let canvas = document.getElementById("c");
 let ctx = canvas.getContext("2d");
 
 let canvases = [
 	background_canvas,
-	stroke_canvas,
+	base_stroke_canvas,
 	base_canvas,
 	mid_canvas,
 	upper_canvas,
+	upper_stroke_canvas,
 ];
 
 let ctxs = canvases.map(e => e.getContext("2d"));

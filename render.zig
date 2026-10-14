@@ -47,6 +47,11 @@ pub const mine_color: Color = .{ .r = 28, .b = 28, .g = 28 };
 pub const board_color: Color = .{ .r = 227, .g = 216, .b = 167 };
 pub const board_hover_color: Color = .{ .r = 247, .g = 236, .b = 187 };
 
+pub const unrevealed_color: Color = .{ .r = 60, .g = 133, .b = 68 };
+pub const unrevealed_hover_color: Color = .{ .r = 77, .g = 161, .b = 86 };
+pub const unrevealed_neighbor_color: Color = .{ .r = 67, .g = 141, .b = 76 };
+pub const unrevealed_stroke_color: Color = .{ .r = 39, .g = 97, .b = 45 };
+
 pub const Canvas = struct {
     id: u32,
 
@@ -115,10 +120,11 @@ pub const Canvas = struct {
 // the base board and a canvas for hiding the board states, revealing cells can
 // erase from the top canvas (or canvases depending on stroke details)
 const background_canvas = Canvas.init(0);
-const stroke_canvas = Canvas.init(1);
+const base_stroke_canvas = Canvas.init(1);
 const base_canvas = Canvas.init(2);
 const mid_canvas = Canvas.init(3);
 const upper_canvas = Canvas.init(4);
+const upper_stroke_canvas = Canvas.init(5);
 
 pub const Coordinates = struct {
     x: i32,
@@ -144,7 +150,7 @@ pub const View = struct {
         };
     }
 
-    pub fn render_cell(self: View, cell: nsweep.Cell, hover: bool) void {
+    pub fn render_cell(self: View, cell: nsweep.Cell, hover: bool, neighbor: bool) void {
         const points = cell.shape;
         const last = points.items[points.items.len - 1];
         const last_c = self.point_to_coordinates(last);
@@ -152,27 +158,47 @@ pub const View = struct {
         const center_coordinates = self.point_to_coordinates(center);
 
         base_canvas.move_to(last_c.x, last_c.y);
-        stroke_canvas.move_to(last_c.x, last_c.y);
+        base_stroke_canvas.move_to(last_c.x, last_c.y);
         base_canvas.begin_path();
-        stroke_canvas.begin_path();
+        base_stroke_canvas.begin_path();
+        upper_canvas.move_to(last_c.x, last_c.y);
+        upper_stroke_canvas.move_to(last_c.x, last_c.y);
+        upper_canvas.begin_path();
+        upper_stroke_canvas.begin_path();
         for (points.items) |item| {
             const coordinates: Coordinates = self.point_to_coordinates(item);
             base_canvas.line_to(coordinates.x, coordinates.y);
-            stroke_canvas.line_to(coordinates.x, coordinates.y);
+            base_stroke_canvas.line_to(coordinates.x, coordinates.y);
+            upper_canvas.line_to(coordinates.x, coordinates.y);
+            upper_stroke_canvas.line_to(coordinates.x, coordinates.y);
         }
         base_canvas.close_path();
-        stroke_canvas.close_path();
+        base_stroke_canvas.close_path();
+        upper_canvas.close_path();
+        upper_stroke_canvas.close_path();
 
         if (hover) {
             base_canvas.set_fill(board_hover_color);
+            upper_canvas.set_fill(unrevealed_hover_color);
+        } else if (neighbor) {
+            base_canvas.set_fill(board_color);
+            upper_canvas.set_fill(unrevealed_neighbor_color);
         } else {
             base_canvas.set_fill(board_color);
+            upper_canvas.set_fill(unrevealed_color);
         }
-        stroke_canvas.set_stroke(board_color);
-        stroke_canvas.set_line_width(10);
-        stroke_canvas.line_join_round();
-        stroke_canvas.stroke();
+        base_stroke_canvas.set_stroke(board_color);
+        base_stroke_canvas.set_line_width(10);
+        base_stroke_canvas.line_join_round();
+        base_stroke_canvas.stroke();
         base_canvas.fill();
+        if (!cell.revealed) {
+            upper_stroke_canvas.set_stroke(unrevealed_stroke_color);
+            upper_stroke_canvas.set_line_width(2);
+            upper_stroke_canvas.line_join_round();
+            upper_stroke_canvas.stroke();
+            upper_canvas.fill();
+        }
 
         if (cell.mines == 0) {
             mid_canvas.set_fill(cell.number_color);
